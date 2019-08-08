@@ -58,35 +58,6 @@ void readTransformation(std::string filename, cv::Matx33d& R, cv::Vec3d& t)
   result_in.close();
 }
 
-
-void LoadMultiCamImages(vector<vector<string>> &vvstrImageFilenames)
-{
-    vvstrImageFilenames.resize(4);
-    for(int i = 0 ;  i<  6000 ;i++)
-       {
-           char imagename1[100];
-           char imagename2[100];
-           char imagename3[100];
-           char imagename4[100];
-
-           sprintf(imagename1,"/home/user/codes/mendeo_data/bmp/frame_vc9_%d.bmp",i);
-           sprintf(imagename2,"/home/user/codes/mendeo_data/bmp/frame_vc10_%d.bmp",i);
-           sprintf(imagename3,"/home/user/codes/mendeo_data/bmp/frame_vc11_%d.bmp",i);
-           sprintf(imagename4,"/home/user/codes/mendeo_data/bmp/frame_vc12_%d.bmp",i);
-
-           string simageName1 = string(imagename1);
-           string simageName2 = string(imagename2);
-           string simageName3 = string(imagename3);
-           string simageName4 = string(imagename4);
-
-           vvstrImageFilenames[0].push_back(simageName1);
-           vvstrImageFilenames[1].push_back(simageName2);
-           vvstrImageFilenames[2].push_back(simageName3);
-           vvstrImageFilenames[3].push_back(simageName4);
-      }
-
-}
-
 void Load()
 {
   ocam_model_left.Load("../intrinsic_parameters/left/calib.txt");
@@ -99,6 +70,14 @@ void Load()
   readTransformation("../result/right.txt", Rotation_right, Translation_right);
   readTransformation("../result/back.txt", Rotation_back, Translation_back);
 
+  src_left = cv::imread("../bmp/frame_vc9_1814.bmp"); 
+  assert(!src_left.empty());
+  src_front = cv::imread("../bmp/frame_vc10_1814.bmp"); 
+  assert(!src_front.empty());
+  src_right = cv::imread("../bmp/frame_vc11_1814.bmp"); 
+  assert(!src_right.empty());
+  src_back = cv::imread("../bmp/frame_vc12_1814.bmp"); 
+  assert(!src_back.empty());
 }
 
 void topview(cv::Mat& output, cv::Mat left, cv::Mat front, cv::Mat right, cv::Mat back, 
@@ -195,38 +174,16 @@ void mergeImages(cv::Mat img1, cv::Mat img2, cv::Mat img3, cv::Mat img4, cv::Mat
 
 int main(int argc, char *argv[])
 {
-  Load();
+  Load();	
 
-  vector<vector<string>> vvstrImageFilenames;
-  LoadMultiCamImages(vvstrImageFilenames);
+  topview(topview_full, src_left, src_front, src_right, src_back, Rotation_left, Translation_left, Rotation_front, Translation_front, Rotation_right, Translation_right, Rotation_back, Translation_back, ocam_model_left, ocam_model_front, ocam_model_right, ocam_model_back);
+  mergeImages(src_left, src_front, src_right, src_back,large);
 
-  int nImages = vvstrImageFilenames[0].size();
+  cv::namedWindow( "topview", 0 );
+  cv::imshow( "topview", topview_full);
 
-  for(int i = 10 ; i< nImages; i++)
-  {
-      src_left = cv::imread(vvstrImageFilenames[0][i]); 
-      assert(!src_left.empty());
-
-      src_front = cv::imread(vvstrImageFilenames[1][i]); 
-      assert(!src_front.empty());
-
-      src_right = cv::imread(vvstrImageFilenames[2][i]); 
-      assert(!src_right.empty());
-
-      src_back = cv::imread(vvstrImageFilenames[3][i]); 
-      assert(!src_back.empty());
-
-      topview(topview_full, src_left, src_front, src_right, src_back, Rotation_left, Translation_left, Rotation_front, Translation_front, Rotation_right, Translation_right, Rotation_back, Translation_back, ocam_model_left, ocam_model_front, ocam_model_right, ocam_model_back);
-      mergeImages(src_left, src_front, src_right, src_back,large);
-
-      cv::namedWindow( "topview", 0 );
-      cv::imshow( "topview", topview_full);
-
-      cv::namedWindow( "large", 0 );
-      cv::imshow( "large", large);
-
-      cv::waitKey(1);
-  }
+  cv::namedWindow( "large", 0 );
+  cv::imshow( "large", large);
 
   while((char)cv::waitKey(10) != 'q');
   cv::imwrite("topview_full.jpg", topview_full);
